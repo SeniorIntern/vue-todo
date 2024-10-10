@@ -1,7 +1,15 @@
 <script setup>
-import { ref } from "vue";
+import JSConfetti from "js-confetti";
+import { computed, ref } from "vue";
+
+const confetti = new JSConfetti();
+
+function showConfetti() {
+  confetti.addConfetti();
+}
 
 let id = 0;
+const hideCompleted = ref(false);
 
 const newTodo = ref("");
 
@@ -9,17 +17,27 @@ const todos = ref([
   {
     id: id++,
     text: "Read Vue Docs",
+    done: false,
   },
   {
     id: id++,
     text: "Make todo app",
+    done: false,
   },
 ]);
 
+const filteredTodos = computed(() => {
+  return hideCompleted.value ? todos.value.filter((t) => !t.done) : todos.value;
+});
+
 const handleTaskAdd = () => {
+  if (!Boolean(newTodo.value.trim())) {
+    return;
+  }
   todos.value.push({
     id: id++,
     text: newTodo.value,
+    donte: false,
   });
   newTodo.value = "";
 };
@@ -29,8 +47,18 @@ const handleTaskDelete = (id) => {
 };
 
 const handleTaskUpdate = (id) => {
+  if (!Boolean(newTodo.value.trim())) {
+    return;
+  }
   todos.value[id].text = newTodo.value;
   newTodo.value = "";
+};
+
+const handleTaskCheckboxToggle = (id) => {
+  todos.value[id].done = !todos.value[id].done;
+  if (todos.value[id].done) {
+    showConfetti();
+  }
 };
 </script>
 
@@ -48,8 +76,19 @@ const handleTaskUpdate = (id) => {
       </form>
 
       <ul>
-        <li class="list__item" v-for="todo in todos" :key="todo.id">
-          <span>{{ todo.text }}</span>
+        <h2 class="task__list__h2">
+          NOTE: Check the checkbox after completing the task
+        </h2>
+        <li class="list__item" v-for="todo in filteredTodos" :key="todo.id">
+          <div class="list__item__controls">
+            <input
+              type="checkbox"
+              v-model="todo.done"
+              @click="handleTaskCheckboxToggle(todo.id)"
+            />
+            <span :class="{ completed: todo.done }">{{ todo.text }}</span>
+          </div>
+
           <div class="list__item__controls">
             <button class="delete_btn" @click="handleTaskDelete(todo.id)">
               Delete
@@ -60,6 +99,10 @@ const handleTaskUpdate = (id) => {
           </div>
         </li>
       </ul>
+
+      <button class="toggle__btn" @click="hideCompleted = !hideCompleted">
+        {{ hideCompleted ? "Show All Tasks" : "Hide Completed Tasks" }}
+      </button>
     </div>
   </section>
 </template>
@@ -80,7 +123,7 @@ ul {
 }
 
 input {
-  padding: 0.4em 0.8em;
+  padding: 0.6em 0.8em;
   border-radius: 0.4em;
   border: 0.5px solid black;
 }
@@ -105,7 +148,7 @@ form button {
 .container {
   width: 500px;
   display: grid;
-  gap: 1.4em;
+  gap: 2em;
   grid-template-columns: repeat(1, 1fr);
 }
 
@@ -124,10 +167,10 @@ form button {
 .todo__form {
   background-color: #d7f7f5;
   border-radius: 0.8em;
-  padding: 1.4em;
+  padding: 3.2em 2.4em;
   display: grid;
   grid-template-columns: repeat(1, 1fr);
-  gap: 1.2em;
+  gap: 2em;
 }
 
 .todo__form_header {
@@ -145,11 +188,26 @@ form button {
   gap: 0.6em;
 }
 
+.completed {
+  text-decoration: line-through;
+  text-decoration-thickness: 0.8px;
+}
+
+.task__list__h2 {
+  font-weight: 200;
+  font-size: 0.8rem;
+  color: gray;
+}
+
 .delete_btn {
   background-color: hsl(0, 100%, 65%);
 }
 
 .update_btn {
   background-color: hsl(0, 0%, 80%);
+}
+
+.toggle__btn {
+  background-color: black;
 }
 </style>
